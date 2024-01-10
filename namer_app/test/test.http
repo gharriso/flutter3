@@ -1,0 +1,9 @@
+POST https://api.openai.com/v1/completions HTTP/1.1
+authorization: Bearer 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
+content-type: application/json
+
+{
+    "prompt": "hi there", 
+    "model": "gpt-3.5-turbo-instruct", 
+    "max_tokens": 128
+}

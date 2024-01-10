@@ -9,8 +9,8 @@ Future<String> processPrompt(String prompt) async {
   var url = Uri.parse('https://api.openai.com/v1/completions');
   // Combine two strings
   var openAIKey = Platform.environment['OPENAI_KEY'];
-  var authKey = 'Bearer ${openAIKey}';
-  print(authKey);
+  var authKey = 'Bearer $openAIKey';
+  print('prompt: $prompt');
   var headers = {'Content-Type': 'application/json', 'Authorization': authKey};
   var body = convert.jsonEncode(
       {'prompt': prompt, "model": "gpt-3.5-turbo-instruct", 'max_tokens': 128});
@@ -19,8 +19,10 @@ Future<String> processPrompt(String prompt) async {
 
   if (response.statusCode == 200) {
     var jsonResponse = convert.jsonDecode(response.body);
-    print(jsonResponse['choices'][0]['text']);
-    return jsonResponse['choices'][0]['text']['content'];
+
+    var promptResponse = jsonResponse['choices'][0]['text'];
+    print('Response: $promptResponse');
+    return promptResponse;
   } else {
     print('Request failed with status: ${response.statusCode}.');
     print(convert.json.decode(response.body));
@@ -78,7 +80,7 @@ class _MyCustomFormState extends State<MyCustomForm> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          String result = await processPrompt('Say hello');
+          String result = await processPrompt(myController.text);
           showDialog(
             context: context,
             builder: (context) {
