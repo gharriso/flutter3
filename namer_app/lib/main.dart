@@ -4,8 +4,25 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert' as convert;
 import 'dart:io';
+import 'package:dart_openai/dart_openai.dart';
 
-Future<String> processPrompt(String prompt) async {
+Future<String> processPromptOpenAiApi(String prompt) async {
+  // Set the OpenAI API key from the .env file.
+  OpenAI.apiKey = Platform.environment['OPENAI_KEY'].toString();
+
+  // Start using!
+  final completion = await OpenAI.instance.completion.create(
+    model: "gpt-3.5-turbo-instruct",
+    prompt: prompt,
+  );
+
+  // Printing the output to the console
+  var output = completion.choices[0].text;
+  print(output);
+  return (output);
+}
+
+Future<String> processOpenAIPromptHttp(String prompt) async {
   var url = Uri.parse('https://api.openai.com/v1/completions');
   // Combine two strings
   var openAIKey = Platform.environment['OPENAI_KEY'];
@@ -80,7 +97,8 @@ class _MyCustomFormState extends State<MyCustomForm> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          String result = await processPrompt(myController.text);
+          String result = await processPromptOpenAiApi(myController.text);
+          // String result = await processOpenAIPromptHttp(myController.text);
           showDialog(
             context: context,
             builder: (context) {
