@@ -1,5 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert' as convert;
@@ -14,12 +16,37 @@ Future<String> processPromptOpenAiApi(String prompt) async {
   final completion = await OpenAI.instance.completion.create(
     model: "gpt-3.5-turbo-instruct",
     prompt: prompt,
+    maxTokens: 256,
   );
 
   // Printing the output to the console
   var output = completion.choices[0].text;
   print(output);
   return (output);
+}
+
+Future<String> processPromptGoogleAi(String prompt) async {
+  final apiKey = Platform.environment['GOOGLE_AI_KEY'].toString();
+  final url =
+      "https://generativelanguage.googleapis.com/v1beta2/models/chat-bison-001:generateMessage?key=$apiKey";
+  final uri = Uri.parse(url);
+
+  Map<String, dynamic> request = {
+    "prompt": {
+      "messages": [
+        {"content": prompt}
+      ]
+    },
+    "temperature": 0.25,
+    "candidateCount": 1,
+    "topP": 1,
+    "topK": 1
+  };
+
+  final response = await http.post(uri, body: jsonEncode(request));
+  final answer = json.decode(response.body)["candidates"][0]["content"];
+
+  return (answer);
 }
 
 Future<String> processOpenAIPromptHttp(String prompt) async {
@@ -74,12 +101,18 @@ class MyCustomForm extends StatefulWidget {
 class _MyCustomFormState extends State<MyCustomForm> {
   // Create a text controller and use it to retrieve the current value
   // of the TextField.
-  final myController = TextEditingController();
-
+  final promptController =
+      TextEditingController(text: 'Enter your question here');
+  final outputController1 =
+      TextEditingController(text: 'The result of your question will go here');
+  final outputController2 =
+      TextEditingController(text: 'The result of your question will go here');
   @override
   void dispose() {
     // Clean up the controller when the widget is disposed.
-    myController.dispose();
+    promptController.dispose();
+    outputController1.dispose();
+    outputController2.dispose();
     super.dispose();
   }
 
@@ -91,15 +124,55 @@ class _MyCustomFormState extends State<MyCustomForm> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
-        child: TextField(
-          controller: myController,
+        child: Column(
+          children: <Widget>[
+            Expanded(
+              child: TextField(
+                controller: promptController,
+                maxLines: 2,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: TextField(
+                      readOnly: true,
+                      maxLines: null,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                      ),
+                      controller:
+                          outputController1, // use a different controller for this text field
+                    ),
+                  ),
+                  Expanded(
+                    child: TextField(
+                      readOnly: true,
+                      maxLines: null,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                      ),
+                      controller:
+                          outputController2, // use a different controller for this text field
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          String result = await processPromptOpenAiApi(myController.text);
-          // String result = await processOpenAIPromptHttp(myController.text);
-          showDialog(
+          String result2 = await processPromptGoogleAi(promptController.text);
+          outputController2.text = result2;
+          String result = await processPromptOpenAiApi(promptController.text);
+          outputController1.text = result;
+          /*showDialog(
             context: context,
             builder: (context) {
               return AlertDialog(
@@ -107,6 +180,7 @@ class _MyCustomFormState extends State<MyCustomForm> {
               );
             },
           );
+        */
         },
         tooltip: 'Execute',
         child: const Icon(Icons.text_fields),
